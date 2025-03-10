@@ -38,16 +38,21 @@ def extract_text_from_pdfs():
     return documents, metadata
 
 
+def remove_null_characters(text):
+    return text.replace("\0", "")
+
 def store_embeddings():
-    """Stores document embeddings in PostgreSQL."""
+    # store documents in postgres db
     documents, metadata = extract_text_from_pdfs()
 
     for doc_text in documents:
-        embedding = model.encode(doc_text, normalize_embeddings=True).tolist()
-        cursor.execute("INSERT INTO document_vectors (doc_text, embedding) VALUES (%s, %s)", (doc_text, embedding))
+        # Remove NUL characters before embedding and inserting
+        cleaned_doc_text = remove_null_characters(doc_text)
+        embedding = model.encode(cleaned_doc_text, normalize_embeddings=True).tolist()
+        cursor.execute("INSERT INTO document_vectors (doc_text, embedding) VALUES (%s, %s)", (cleaned_doc_text, embedding))
 
     conn.commit()
-    # print(f"✅ Stored {len(documents)} documents in PostgreSQL.")
+    print(f"Stored {len(documents)} documents in PostgreSQL.")
 
 
 if __name__ == "__main__":
